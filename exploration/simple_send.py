@@ -3,13 +3,14 @@ import serial
 import RPi.GPIO as GPIO
 
 ser = serial.Serial(
-  port='/dev/ttyAMA0',
-  baudrate = 115200,
+  port='/dev/serial0',
+  baudrate = 9600,
   parity=serial.PARITY_NONE,
   stopbits=serial.STOPBITS_ONE,
   bytesize=serial.EIGHTBITS,
   timeout=1
 )
+print('Serial Initialized, let us send.');
 
 # This com delay should vary based upon the baud.
 COM_DELAY = 1 / 1000000 * 4000
@@ -32,11 +33,14 @@ def com_error():
   exit()
 
 def sendSms(number, text):
+  print('Sending text.')
   writeSerial("AT+CMGF=1\r\n");
   readSerial("OK\r\n")
+  print('Initiated connection.')
 
   writeSerial("AT+CMGS=\"" + number + "\"\r\n" + text + "\r\n");
   readSerial("> ")
+  print('Message transmitted.')
 
   writeSerial(chr(26))
 
@@ -72,15 +76,18 @@ def readUnreadMessages():
   writeSerial("AT+CMGL=\"ALL\",0\n")
   print(readSerial())
 
-def readSerial(termination_string = "", timeout = 1000000):
+def readSerial(termination_string = "", timeout = 10000000):
+  print('-')
   end = getMTime() + timeout
   buffer = ""
 
   while getMTime() < end:
     buffer = buffer + ser.read(10).decode('ascii')
     if buffer.find(termination_string) != -1:
+      print('Found')
       break
 
+  print('|')
   if termination_string != "" and getMTime() > end:
     com_error()
 
@@ -100,9 +107,14 @@ def getMTime():
   return time.time_ns() / 1000
 
 def writeSerial(string):
+  print('.')
   ser.write(string.encode())
 
-#sendSms(number, text)
+# Program
+
+sendSms(number, text)
+
+ser.close()
 
 #run = True
 #timeout = 100000 * 1000
@@ -114,7 +126,7 @@ def writeSerial(string):
 #  if getMTime() > endtime:
 #    break
 
-prepareForSMSReceive()
-readUnreadMessages()
-writeSerial("AT+CMGD=?\n")
-print(readSerail())
+#prepareForSMSReceive()
+#readUnreadMessages()
+#writeSerial("AT+CMGD=?\n")
+#print(readSerail())
